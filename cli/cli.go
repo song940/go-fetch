@@ -1,21 +1,17 @@
 package cli
 
 import (
-	"log"
-	"net/http"
+	"fmt"
 
 	"github.com/song940/fetch/fetch"
 )
 
 func Run() {
-	client := fetch.NewFetch("https://sse.dev/test", &fetch.FetchOptions{
-		Method: http.MethodGet,
+	client := fetch.NewFetch()
+	req := fetch.NewRequest("https://sse.dev/test")
+	client.RequestSSE(req, func(message string) {
+		fmt.Println(message)
 	})
-	// response, _ := client.SendRequest()
-	// text := response.Text()
-	// log.Println(text)
-
-	client.RequestSSE(func(message string) {
-		log.Println(message)
-	})
+	// res, _ := client.SendRequest(req)
+	// log.Println(res.Text())
 }

@@ -1,54 +1,30 @@
 package fetch
 
 import (
-	"bytes"
 	"net/http"
 )
 
 type FetchClient struct {
-	Client  *http.Client
-	Options *FetchOptions
+	Client *http.Client
 }
 
-type FetchOptions struct {
-	Url     string
-	Method  string
-	Headers map[string]string
-	Body    []byte
-}
-
-func NewFetch(url string, opts *FetchOptions) (client *FetchClient) {
-	options := &FetchOptions{
-		Url:     url,
-		Headers: make(map[string]string),
-	}
-	client = &FetchClient{
-		Client:  &http.Client{},
-		Options: options,
-	}
+func NewFetch() (fetch *FetchClient) {
+	client := &http.Client{}
+	fetch = &FetchClient{client}
 	return
 }
 
-func (client *FetchClient) SendRequest() (resp *FetchResponse, err error) {
-	body := bytes.NewBuffer(client.Options.Body)
-	req, err := http.NewRequest(client.Options.Method, client.Options.Url, body)
+func (fetch *FetchClient) SendRequest(request *FetchRequest) (response *FetchResponse, err error) {
+	res, err := fetch.Client.Do(request.Request())
 	if err != nil {
 		return
 	}
-	for name, value := range client.Options.Headers {
-		req.Header.Set(name, value)
-	}
-	res, err := client.Client.Do(req)
-	if err != nil {
-		return
-	}
-	resp = NewResponse(res)
+	response = NewResponse(res)
 	return
 }
 
-func (client *FetchClient) RequestSSE(handler func(string)) *FetchClient {
-	client.Options.Headers["Accept"] = "text/event-stream"
-	response, _ := client.SendRequest()
+func (fetch *FetchClient) RequestSSE(req *FetchRequest, handler func(string)) {
+	req.SetHeader("Accept", "text/event-stream")
+	response, _ := fetch.SendRequest(req)
 	response.Readline(handler)
-	return client
 }
